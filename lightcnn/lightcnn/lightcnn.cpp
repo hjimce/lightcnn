@@ -6,12 +6,14 @@
 #include <Eigen/Eigen>
 #include "SoftmaxLayer.h"
 #include "FullyconnecteLayer.h"
+#include "ActivationLayer.h"
 
 
 int main()
 {
 	//CSoftmaxLayer::test();
-	CFullyconnecteLayer::test();
+	//CFullyconnecteLayer::test();
+	CActivationLayer::test();
 
 
 

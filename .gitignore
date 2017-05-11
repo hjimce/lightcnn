@@ -1,0 +1,9 @@
+lightcnn/x64/Debug/
+lightcnn/lightcnn/x64/
+lightcnn/ipch/
+*.opendb
+*.db
+lightcnn/Debug/
+.idea/
+lightcnn/.vs/lightcnn/v14/.suo
+lightcnn/lightcnn/Debug/

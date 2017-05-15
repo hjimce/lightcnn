@@ -71,10 +71,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>F:\lightcnn\lightcnn\lightcnn\Eigen;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>F:\lightcnnt\lightcnn\lightcnn\Eigen;F:\lightcnn\lightcnn\lightcnn;$(IncludePath)</IncludePath>
+    <IncludePath>F:\lightcnn\lightcnn\lightcnn\Eigen;F:\lightcnn\lightcnn\lightcnn;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -148,16 +149,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ActivationLayer.h" />
+    <ClInclude Include="config.h" />
+    <ClInclude Include="ConvolutionLayer.h" />
     <ClInclude Include="FullyconnecteLayer.h" />
     <ClInclude Include="SoftmaxLayer.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ActivationLayer.cpp" />
-    <ClCompile Include="FullyconnecteLayer.cpp" />
     <ClCompile Include="lightcnn.cpp" />
-    <ClCompile Include="SoftmaxLayer.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

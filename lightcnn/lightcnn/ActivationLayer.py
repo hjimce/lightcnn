@@ -1,5 +1,5 @@
 import  tensorflow as tf
-inputs=tf.constant([[1,-2,3],[4,-5,6],[7,-8,-9],[10,11,-12]],shape=(4,3),dtype=tf.float32)
+inputs=tf.constant([1,2,3,6,4,5,2,8,10,12,11,9],shape=(4,3),dtype=tf.float32)
 weights=tf.constant([0.55, -0.88, 0.75, -1.1, -0.11, 0.002],shape=(3,2),dtype=tf.float32)
 bais=tf.constant([3, -2],dtype=tf.float32)
 label=tf.constant([1,0,1,1])
@@ -9,7 +9,7 @@ one_hot=tf.one_hot(label,2)
 predicts=tf.nn.softmax(relu_output)
 loss =-tf.reduce_mean(one_hot * tf.log(predicts))
 
-
+#打印相关变量，梯度等，验证是否与c++结果相同
 d_output,d_inputs,d_weights,d_bais=tf.gradients(loss,[relu_output,inputs,weights,bais])
 
 with tf.Session() as sess:

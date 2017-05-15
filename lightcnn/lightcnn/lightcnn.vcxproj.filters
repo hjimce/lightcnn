@@ -33,21 +33,18 @@
     <ClInclude Include="ActivationLayer.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ConvolutionLayer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="lightcnn.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="SoftmaxLayer.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="FullyconnecteLayer.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="ActivationLayer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

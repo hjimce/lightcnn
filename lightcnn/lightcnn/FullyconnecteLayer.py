@@ -1,5 +1,5 @@
 import  tensorflow as tf
-inputs=tf.constant([[1,2,3],[4,5,6],[7,8,9],[10,11,12]],shape=(4,3),dtype=tf.float32)
+inputs=tf.constant([1,2,3,6,4,5,2,8,10,12,11,9],shape=(4,3),dtype=tf.float32)
 weights=tf.constant([0.55, 0.88, 0.75, 1.1, 0.11, 0.002],shape=(3,2),dtype=tf.float32)
 bais=tf.constant([3, 2],dtype=tf.float32)
 label=tf.constant([1,0,1,1])

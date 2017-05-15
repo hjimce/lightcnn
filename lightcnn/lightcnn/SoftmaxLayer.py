@@ -1,5 +1,9 @@
 import  tensorflow as tf
-inputs=tf.constant([[1,2,3],[4,5,6],[7,8,9],[10,11,12]],dtype=tf.float32)
+
+batch_size = 4
+input_size = 3
+output_size = 2
+inputs=tf.constant([1,2,3,6,4,5,2,8,10,12,11,9],shape=[batch_size,input_size],dtype=tf.float32)
 label=tf.constant([1,0,1,1])
 one_hot=tf.one_hot(label,3)
 predicts=tf.nn.softmax(inputs)
@@ -9,3 +13,4 @@ gradient=tf.gradients(loss,inputs)
 with tf.Session() as sess:
 	sess.run(tf.global_variables_initializer());
 	print (sess.run(loss))
+	print (sess.run(gradient))

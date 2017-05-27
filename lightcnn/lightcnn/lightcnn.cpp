@@ -34,7 +34,6 @@ int main()
 	std::cout << flipt << std::endl;*/
 
 
-	return 0;
 
 
 

@@ -1,27 +1,134 @@
+/*
 #pragma once
 #include "config.h"
 #include "SoftmaxLayer.h"
-#include "FullyconnecteLayer.h"
+#include "FullyconnecteLayer.h"*/
+#pragma once
+#include "config.h"
+#include <unsupported/Eigen/CXX11/Tensor>
+#include <iostream>
+enum ActivationMethod
+{
+	relu,
+	sigmoid
+};
+template <class TType>
 class CActivationLayer
 {
 public:
+	CActivationLayer() {
+
+
+	};
+	~CActivationLayer() {
+
+
+	};
+
+	void CActivationLayer::forward(const TType &bottom,TType& top,
+		const Eigen::ThreadPoolDevice &device, const ActivationMethod &method = ActivationMethod::relu) {
+		switch (method)
+		{
+		case relu:
+			top.device(device)= bottom.cwiseMax(0.f);
+			break;
+		case sigmoid:
+			top.device(device)= 1.f / (1.f + (-bottom).exp());
+			break;
+		default:
+			std::cout << "warning:activation method no support" << std::endl;
+			break;
+		}
+	}
+
+	void CActivationLayer::backward(const TType &dtop,const TType& top, TType&dbottom,
+		const Eigen::ThreadPoolDevice &device, const ActivationMethod &method = ActivationMethod::relu) {
+		switch (method)
+		{
+		case relu:
+			dbottom.device(device) = (top> 0.f).cast<float>()*dtop;
+			break;
+		case sigmoid:
+			dbottom.device(device) = dtop*top*(1.f - top);
+			break;
+		default:
+			std::cout << "warning:activation backward method no support" << std::endl;
+			break;
+		}
+	}
+
+
+
+};
+class CActivationLayer_test
+{
+public:
+	static void CActivationLayer_test::test() {
+
+		Eigen::ThreadPool *tp = new Eigen::ThreadPool(8);
+		Eigen::ThreadPoolDevice device(tp, 8);
+
+
+
+		CActivationLayer<Tensor3xf> layer;
+		Tensor3xf bottom(2, 2, 3);
+		Tensor3xf top(2, 2, 3);
+
+		bottom.setRandom();
+		layer.forward(bottom, top, device);
+
+
+		std::cout << "***************forward************" << std::endl;
+
+
+
+		Tensor3xf dtop(2, 2, 3);
+		dtop.setConstant(2);
+		Tensor3xf dbottom(2, 2, 3);
+		layer.backward(dtop, top, dbottom, device);
+
+
+
+		std::cout << "***************backward************" << std::endl;
+		std::cout << "m_dtop"<<dtop << std::endl;
+		std::cout << "m_dbottom"<<dbottom<< std::endl;
+
+
+
+
+	}
+
+};
+
+
+
+/*
+class CActivationLayer
+{
+	CActivationLayer(Eigen::ThreadPoolDevice *device) {
+		m_device = device;
+
+	};
+	~CActivationLayer() {
+	};
+public:
 	//relu=max(x,0)
 	static void CActivationLayer::relu_forward(const Tensor2xf &bottom,Tensor2xf &top){
-		top = bottom.cwiseMax(0.f);
+		
 	}
-	/* if x>0 dx=drelu
-	else dx=0  */
+	/ * if x>0 dx=drelu
+	else dx=0  * /
 	static void CActivationLayer::relu_backward(const Tensor2xf &top, const Tensor2xf &d_top, Tensor2xf &d_bottom) {
-		d_bottom = (top > 0.f).cast<float>()*d_top;
+		
 	}
 	//y=1/(1+exp(-z))
 	static void CActivationLayer::sigmoid_forward(const Tensor2xf &bottom, Tensor2xf &top) {
-		top = 1 / (1 + (-bottom).exp());
+		
 		
 	}
 	//dz=y(1-y)
 	static void CActivationLayer::sigmoid_backward(const Tensor2xf &top, const Tensor2xf&d_top, Tensor2xf &d_bottom) {
-		d_bottom = d_top*top*(1 - top);
+		
 	}
 	static void CActivationLayer::test() {//—È÷§≤‚ ‘∫Ø ˝
 
@@ -68,5 +175,5 @@ public:
 		
 	}
 		
-};
+};*/
 

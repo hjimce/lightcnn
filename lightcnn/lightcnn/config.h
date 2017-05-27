@@ -1,4 +1,5 @@
 #pragma once
+#include <unsupported/Eigen/CXX11/ThreadPool>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 typedef Eigen::Tensor<float,0, Eigen::RowMajor> Tensor0xf;
@@ -6,6 +7,8 @@ typedef Eigen::Tensor<float, 1, Eigen::RowMajor> Tensor1xf;
 typedef Eigen::Tensor<float, 2, Eigen::RowMajor> Tensor2xf;
 typedef Eigen::Tensor<float, 3, Eigen::RowMajor> Tensor3xf;
 typedef Eigen::Tensor<float, 4, Eigen::RowMajor> Tensor4xf;
+typedef Eigen::Tensor<float, 5, Eigen::RowMajor> Tensor5xf;
+#define  EIGEN_USE_THREADS 8
 
 
 /*

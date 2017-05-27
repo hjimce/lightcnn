@@ -4,26 +4,35 @@
 #include "stdafx.h"
 #include <iostream>
 #include <unsupported/Eigen/CXX11/Tensor>
+#include "BiasLayer.h"
 
 #include "SoftmaxLayer.h"
 #include "FullyconnecteLayer.h"
 #include "ActivationLayer.h"
 #include "ConvolutionLayer.h"
+#include "PoolingLayer.h"
 
 
 int main()
 {
-	//CSoftmaxLayer::test();
-	//CFullyconnecteLayer::test();
-	CActivationLayer::test();
-	//CConvolutionLayer::test();
+	//CSoftmaxLayer_test::test();
+	//CFullyconnecteLayer_test::test();
+	//CActivationLayer_test::test();
+	CPoolingLayer_test::test();
+	//CConvolutionLayer_test::test();
+	//CBiasLayer_test::test();
+
 /*
 	Tensor2xf t(4, 3);
 	t.setRandom();
 
-	Eigen::Tensor<float, 0,Eigen::RowMajor> frob_norm_tens = t.square().sum();
-	const float frob_norm = frob_norm_tens.coeff();
-	std::cout << frob_norm << std::endl;*/
+	Tensor2xf flipt = t.inverse();
+
+
+
+	std::cout << t << std::endl; 
+	std::cout << flipt << std::endl;*/
+
 
 	return 0;
 

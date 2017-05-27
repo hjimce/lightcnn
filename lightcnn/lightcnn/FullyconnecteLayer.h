@@ -2,81 +2,114 @@
 #include "config.h"
 #include <iostream>
 #include "SoftmaxLayer.h"
-
+#include "BiasLayer.h"
 class CFullyconnecteLayer
 {
 public:
+	//全连接层的输入神经元个数，输出神经元个数
+	CFullyconnecteLayer(int input_num,int output_num) {
+
+		m_weights = Tensor2xf(input_num, output_num);
+		m_dweights = Tensor2xf(input_num, output_num);
+		m_bias = Tensor1xf(output_num);
+		m_dbias = Tensor1xf(output_num);
+
+	};
+	~CFullyconnecteLayer() {
+
+
+	};
+	void CFullyconnecteLayer::test_set() {
+		m_bias.setValues({ 3, 2 });
+		Tensor1xf temp(3*2);
+		temp.setValues({ 0.55f, 0.88f, 0.75f, 1.1f, 0.11f, 0.002f });
+
+		m_weights = temp.reshape(Eigen::array<int, 2> { {3, 2}});
+
+	}
 
 	//y=x*w+b
-	static void CFullyconnecteLayer::forward(const Tensor2xf &inputs, const Tensor2xf &weights, const Tensor1xf &bais
-		, Tensor2xf &outputs) {
-		
-		outputs = inputs.contract(weights, Eigen::array<Eigen::IndexPair<int>, 1> { Eigen::IndexPair<int>(1, 0) });
+	void CFullyconnecteLayer::forward(const Tensor2xf &bottom, Tensor2xf &top, const Eigen::ThreadPoolDevice &device) {
 
-		auto b = bais.reshape(Eigen::array<int, 2>{ {1, outputs.dimension(1)}}).broadcast(Eigen::array<int, 2> { {inputs.dimension(0), 1}});
-
-		
-		outputs =outputs+b;
-	//	outputs.rowwise() += bais
-
-/*
-		outputs = inputs*weights;
-		outputs.rowwise() += bais.transpose();//每一行加上b*/
+		top.device(device) = bottom.contract(m_weights, Eigen::array<Eigen::IndexPair<int>, 1> { Eigen::IndexPair<int>(1, 0) });
+		auto b = m_bias.reshape(Eigen::array<int, 2>{ {1, top.dimension(1)}}).broadcast(Eigen::array<int, 2> { {bottom.dimension(0), 1}});
+		top.device(device) = top+ b;
 	}
-   //http://cs231n.github.io/optimization-2/#mat
+	//http://cs231n.github.io/optimization-2/#mat
 	//y=x*w+b,反向求导后dw=x.T*dy,dx=dy*w.T,db=dy
-	static void CFullyconnecteLayer::backward(const Tensor2xf&inputs, const Tensor2xf &weights, const Tensor1xf &bais,
-		const Tensor2xf &d_outputs, Tensor2xf &d_inputs, Tensor2xf &d_weights, Tensor1xf &d_bais) {
+	void CFullyconnecteLayer::backward(const Tensor2xf&bottom,const Tensor2xf &d_top, Tensor2xf &d_bottom, const Eigen::ThreadPoolDevice &device) {
 
 		Eigen::array<Eigen::IndexPair<int>, 1> product_dims_dw = { Eigen::IndexPair<int>(0, 0) };
-		d_weights = inputs.contract(d_outputs, product_dims_dw);
-
 		Eigen::array<Eigen::IndexPair<int>, 1> product_dims_di = { Eigen::IndexPair<int>(1, 1) };
-		d_inputs = d_outputs.contract(weights, product_dims_di);
 
-
-		d_bais = d_outputs.sum(Eigen::array<int, 1> { { 0 } });
-
-
-/*
-		d_weights = inputs.transpose()*d_outputs;
-		d_inputs = d_outputs*weights.transpose();
-		d_bais = d_outputs.colwise().sum();*/
+		d_bottom.device(device) = d_top.contract(m_weights, product_dims_di);
+		m_dweights.device(device) = bottom.contract(d_top, product_dims_dw);
+		m_dbias.device(device) = d_top.sum(Eigen::array<int, 1> { { 0 } });
 	}
-	static void CFullyconnecteLayer::test() {//验证测试函数
+
+public:
+
+	//本层数据
+	Tensor2xf m_weights;
+	Tensor2xf m_dweights;
+	Tensor1xf m_bias;
+	Tensor1xf m_dbias;
+};
+
+class CFullyconnecteLayer_test
+{
+public:
+	static void CFullyconnecteLayer_test::test() {
+
+		Eigen::ThreadPool *tp = new Eigen::ThreadPool(8);
+		Eigen::ThreadPoolDevice device(tp, 8);
 
 		int batch_size = 4;
 		int input_size = 3;
 		int output_size = 2;
-		float input_data[12] = { 1, 2, 3, 6, 4, 5, 2, 8, 10, 12, 11, 9 };
-		Eigen::TensorMap<Tensor2xf>inputs(input_data, batch_size, input_size);
-		float weight_data[6] = { 0.55, 0.88, 0.75, 1.1, 0.11, 0.002 };
-		Eigen::TensorMap<Tensor2xf>weights(weight_data, input_size, output_size);
-		float bais_data[2] = { 3,2 };
-		Eigen::TensorMap<Tensor1xf>bais(bais_data, output_size);
-		float label_data[4] = { 1, 0, 1, 1 };
-		Eigen::TensorMap<Tensor1xf> label(label_data, batch_size);
+		Tensor2xf bottom(batch_size, input_size);
+		bottom.setValues({ { 1,2,3 },{ 6,4,5 },{ 2,8,10 },{ 12,11,9 } });
+		Tensor2xf top(batch_size, output_size);
+		Tensor2xf dbottom(batch_size, input_size);
+		Tensor2xf dtop(batch_size, output_size);
+
+		Tensor1xf label_1d(batch_size);
+		label_1d.setValues({ 1, 0, 1, 1 });
+		Tensor2xf one_hot;
+		CBaseFunction::onehot(label_1d, output_size, one_hot);
+
+
+		CFullyconnecteLayer layer(input_size, output_size);
+		layer.test_set();
+		layer.forward(bottom, top,device);
+		
+
+
+		float loss = CBaseFunction::softmax_with_loss(top, one_hot, dtop, device);
+
+		layer.backward(bottom, dtop, dbottom, device);
+
+
 
 
 		
 
-		Tensor2xf outputs;//全连接层
-		forward(inputs, weights, bais, outputs);
-		
-		Tensor2xf d_input, d_weights,d_output;
-		Tensor0xf loss;
-		CSoftmaxLayer::softmax_loss_forward_backward(outputs, label, d_output, loss);
-		std::cout << loss << std::endl;
-
-		Tensor1xf d_bais;
-		backward(inputs, weights, bais, d_output, d_input, d_weights, d_bais);
 
 
-		std::cout << "outputs" << outputs << std::endl;
-		std::cout << "d_output" << d_output << std::endl;
-		std::cout << "d_input" << d_input << std::endl;
-		std::cout << "d_weights" << d_weights << std::endl;
-		std::cout << "d_bais"<<d_bais << std::endl;
+
+
+
+		std::cout << "***************backward************" << std::endl;
+		std::cout << "loss" << loss << std::endl;
+		std::cout << "m_top" << top << std::endl;
+		std::cout << "m_dtop" << dtop << std::endl;
+		std::cout << "m_dbottom" << dbottom << std::endl;
+		std::cout << "m_dweight" << layer.m_dweights << std::endl;
+		std::cout << "m_dbias" << layer.m_dbias << std::endl;
+
+
+
 	}
+
 };
 

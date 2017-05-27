@@ -39,6 +39,15 @@
     <ClInclude Include="ConvolutionLayer.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="BiasLayer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseFunction.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="PoolingLayer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

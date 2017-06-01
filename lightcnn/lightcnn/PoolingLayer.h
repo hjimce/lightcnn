@@ -37,11 +37,11 @@ public:
 		switch (m_padding_method)
 		{
 		case valid:
-			patches = bottom.extract_image_patches( m_wksize, m_hksize, m_wstride, m_hstride, 1, 1,
+			patches = bottom.extract_image_patches(m_hksize, m_wksize, m_hstride, m_wstride, 1, 1,
 				Eigen::PADDING_VALID);
 			break;
 		case same:
-			patches = bottom.extract_image_patches( m_wksize, m_hksize, m_wstride, m_hstride,  1, 1,
+			patches = bottom.extract_image_patches(m_hksize, m_wksize, m_hstride, m_wstride, 1, 1,
 				Eigen::PADDING_SAME );
 			break;
 		default:
@@ -72,7 +72,7 @@ public:
 
 
 	void CPoolingLayer::forward(const Tensor4xf&bottom,Tensor4xf&top, const Eigen::ThreadPoolDevice &device) {
-		Eigen::array<int, 2> reduction_dims{2,3};//第二维、第三维的大小等于（hksize、wksize）
+		Eigen::array<int, 2> reduction_dims{1,2};//第二维、第三维的大小等于（hksize、wksize）
 		Eigen::DSizes<int, 4>post_reduce_dims=get_top_shape(bottom);
 		Tensor5xf patches; //(bottom[0], bottom[1] / hstride*bottom[2] / wstride, hsize, wsize, bottom[3])
 		extract_image_patches(bottom, patches);
@@ -116,14 +116,12 @@ public:
 	void CPoolingLayer::maxpooling_backward(const Tensor5xf &top_patches,const Eigen::DSizes<int, 4>&post_reduce_dims,
 		const Tensor4xf&dtop,Tensor4xf&dbottom) {
 
-		Eigen::array<Eigen::DenseIndex, 2> reduce_dims{ 2,3 };
+		Eigen::array<Eigen::DenseIndex, 2> reduce_dims{ 1,2};
 		auto index_tuples = top_patches.index_tuples();
-		Eigen::Tensor<Eigen::Tuple<Eigen::DenseIndex, float>, 3, Eigen::RowMajor> reduced_by_dims;
+		Eigen::Tensor<Eigen::Tuple<Eigen::DenseIndex, float>, 3, Eigen::internal::traits<Tensor5xf>::Layout> reduced_by_dims;
 		reduced_by_dims = index_tuples.reduce(reduce_dims, Eigen::internal::ArgMaxTupleReducer<Eigen::Tuple<Eigen::DenseIndex, float> >());
 
-		//与forward阶段相反，需要reshape回去
-		Tensor5xf dpatches(top_patches);
-		dpatches.setZero();
+
 
 		Tensor3xf reshape = dtop.reshape(Eigen::array<int, 3>{post_reduce_dims[0], post_reduce_dims[1] * post_reduce_dims[2], post_reduce_dims[3]});
 		//求dpatches
@@ -145,14 +143,57 @@ public:
 		,top_patches.dimension(3) ,top_patches.dimension(4)},v.first);
 
 
-		int height = patches_index[1] / post_reduce_dims[1];
-		int width = patches_index[1]% post_reduce_dims[1];
-		auto &element_dbottom = dbottom(patches_index[0], m_hstride*height + patches_index[2], m_wstride*width + patches_index[3], patches_index[4]);
+		int height = (patches_index[3] / post_reduce_dims[1])*m_hstride+patches_index[1];
+		int width = (patches_index[3]% post_reduce_dims[1])*m_wstride+patches_index[2];
+		if (height>=dbottom.dimension(1) ||width>=dbottom.dimension(2))
+		{
+			std::cout<<"out of range:"<<height<<" : "<<width<<std::endl;
+			continue;
+		}
+		auto &element_dbottom = dbottom(patches_index[0], height,width, patches_index[4]);
 		element_dbottom += reshape.data()[i];
 		}
 	}
-	void CPoolingLayer::avgpooling_backward(const Tensor5xf &top_patches, const Eigen::DSizes<int, 4>&post_reduce_dims,
-		const Tensor4xf&dtop, Tensor4xf&dbottom) {
+	//均值池化，也可以看成是卷积
+	void CPoolingLayer::avgpooling_backward(const Tensor4xf&dtop, Tensor4xf&dbottom) {
+/*
+		//与forward阶段相反，需要reshape回去
+		Tensor5xf dpatches(top_patches.dimensions());
+		dpatches.setZero();
+
+		Tensor3xf reshape = dtop.reshape(Eigen::array<int, 3>{post_reduce_dims[0], post_reduce_dims[1] * post_reduce_dims[2], post_reduce_dims[3]});*/
+		
+		Tensor4xf mean_coffe = dtop*(1.f / (m_wksize*m_hksize));//均值池化反向求导要先除以均值系数
+
+		for (int i=0;i<mean_coffe.dimension(0);i++)
+		{
+			for (int j=0;j<mean_coffe.dimension(1);j++)
+			{
+				for (int k=0;k<mean_coffe.dimension(2);k++)
+				{
+					for (int h=0;h<mean_coffe.dimension(3);h++)
+					{
+						const auto &mean_element= mean_coffe(i, j, k, h);
+						for (int hh=0;hh<m_hksize;hh++)
+						{
+							for (int ww=0;ww<m_wksize;ww++)
+							{
+								int patch_height = j*m_hstride + hh;
+								int patch_width = k*m_wstride + ww;
+								if (patch_height<dbottom.dimension(1) &&patch_width<dbottom.dimension(2))
+								{
+									dbottom(i, patch_height, patch_width, h) += mean_element;
+								}
+								
+							}
+						}
+					}
+				}
+			}
+		}
+
+/*
+
 		//求dbottom
 		for (int i = 0; i < top_patches.dimension(0); i++)
 		{
@@ -176,7 +217,7 @@ public:
 				}
 			}
 
-		}
+		}*/
 
 	}
 	void CPoolingLayer::backward(const Tensor4xf&bottom,const Tensor4xf&dtop, Tensor4xf&dbottom, const Eigen::ThreadPoolDevice &device) {
@@ -191,6 +232,7 @@ public:
 			maxpooling_backward(patches, post_reduce_dims, dtop, dbottom);
 			break;
 		case avg:
+			avgpooling_backward(dtop, dbottom);
 			break;
 		default:
 			break;
@@ -201,13 +243,13 @@ public:
 
 	}
 private:
-	int m_hksize;
+	int m_hksize;//池化块的长宽
 	int m_wksize;
-	int m_hstride;
+	int m_hstride;//池化步长
 	int m_wstride;
 	
-	PaddingMethod m_padding_method;
-	PoolingMethod m_pooling_method;
+	PaddingMethod m_padding_method;//边界处理方法
+	PoolingMethod m_pooling_method;//池化方法：均值池化、最大池化等
 
 };
 
@@ -221,29 +263,41 @@ public:
 		Eigen::ThreadPool *tp = new Eigen::ThreadPool(8);
 		Eigen::ThreadPoolDevice device(tp, 8);
 
-		int batch_size = 2;
-		int input_channel = 3;
-		int input_height = 5;
-		int input_width = 5;
+		int batch_size = 1;
+		int input_channel = 1;
+		int input_height = 7;
+		int input_width = 7;
 		int kenel_height = 2;
-		int kenel_widht = 3;
+		int kenel_widht = 2;
 		int khstride =3;
-		int kwstride = 2;
-		float *input_data = new float[batch_size*input_channel*input_height*input_width];
-		for (int i = 0; i < batch_size*input_channel*input_height*input_width; i++)
+		int kwstride = 3;
+
+
+		Tensor4xf bottom(batch_size, input_height, input_width, input_channel);
+		int count = 0;
+		for (int i=0;i<batch_size;i++)
 		{
-			input_data[i] = 0.1f*i;
+			for (int j=0;j<input_height;j++)
+			{
+				for (int k=0;k<input_width;k++)
+				{
+					for (int h=0;h<input_channel;h++)
+					{
+						bottom(i, j, k, h) = 0.1f*count;
+						count++;
+					}
+				}
+			}
 		}
 
-		Eigen::TensorMap<Tensor4xf>bottom(input_data, batch_size, input_height, input_width, input_channel);
 
-
-		float *label1d_data =new float[batch_size];
+		Tensor1xf label_1d(batch_size);
 		for (int i = 0; i < batch_size; i++)
 		{
-			label1d_data[i] = i;
+			label_1d(i) = i;
 		}
-		Eigen::TensorMap<Tensor1xf>label_1d(label1d_data, batch_size);
+
+
 
 
 		
@@ -251,7 +305,8 @@ public:
 
 
 		//第一层：pooling层
-		CPoolingLayer layer({kenel_height,kenel_widht,khstride,kwstride },PaddingMethod::valid,PoolingMethod::max);
+		CPoolingLayer layer({kenel_height,kenel_widht,khstride,kwstride },PaddingMethod::same,PoolingMethod::avg
+		);
 
 
 		Tensor4xf top;
@@ -277,11 +332,11 @@ public:
 		layer.backward(bottom, dtop,dbottom,device);
 
 
-
+		Tensor4rf dbottom_swap = dbottom.swap_layout();
 		std::cout << "***************forward************" << std::endl;
 		//CBaseFunction::print_shape(one_hot);
-		CBaseFunction::print_shape(dbottom);
-		CBaseFunction::print_element(dbottom);
+		CBaseFunction::print_shape(top);
+		CBaseFunction::print_element(top);
 		//std::cout << "bottom" << bottom<< std::endl;
 		//std::cout << "top" << top << std::endl;
 		//std::cout << "dbottom" << dbottom << std::endl;

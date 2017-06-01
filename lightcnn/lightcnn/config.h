@@ -2,13 +2,23 @@
 #include <unsupported/Eigen/CXX11/ThreadPool>
 #include <unsupported/Eigen/CXX11/Tensor>
 
-typedef Eigen::Tensor<float,0, Eigen::RowMajor> Tensor0xf;
-typedef Eigen::Tensor<float, 1, Eigen::RowMajor> Tensor1xf;
-typedef Eigen::Tensor<float, 2, Eigen::RowMajor> Tensor2xf;
-typedef Eigen::Tensor<float, 3, Eigen::RowMajor> Tensor3xf;
-typedef Eigen::Tensor<float, 4, Eigen::RowMajor> Tensor4xf;
-typedef Eigen::Tensor<float, 5, Eigen::RowMajor> Tensor5xf;
+typedef Eigen::Tensor<float,0, Eigen::ColMajor> Tensor0xf;
+typedef Eigen::Tensor<float, 1, Eigen::ColMajor> Tensor1xf;
+typedef Eigen::Tensor<float, 2, Eigen::ColMajor> Tensor2xf;
+typedef Eigen::Tensor<float, 3, Eigen::ColMajor> Tensor3xf;
+typedef Eigen::Tensor<float, 4, Eigen::ColMajor> Tensor4xf;
+typedef Eigen::Tensor<float, 5, Eigen::ColMajor> Tensor5xf;
+
+
+
+typedef Eigen::Tensor<float, 1, Eigen::RowMajor> Tensor1rf;
+typedef Eigen::Tensor<float, 2, Eigen::RowMajor> Tensor2rf;
+typedef Eigen::Tensor<float, 3, Eigen::RowMajor> Tensor3rf;
+typedef Eigen::Tensor<float, 4, Eigen::RowMajor> Tensor4rf;
+typedef Eigen::Tensor<float, 5, Eigen::RowMajor> Tensor5rf;
+
 #define  EIGEN_USE_THREADS 8
+
 
 
 /*

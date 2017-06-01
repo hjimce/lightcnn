@@ -86,21 +86,45 @@ public:
 		std::cout <<"tensor shape:" <<t << std::endl;
 
 	}
-	static void CBaseFunction::print_element(const Tensor4xf& tensor) {
-		
-		for (int i=0;i<tensor.dimension(0);i++)
+	template <class TType>
+	static void CBaseFunction::print_element(const TType& tensor) {
+		//std::cout << "tensor element:" << tensor << std::endl;
+		switch (tensor.NumDimensions)
 		{
-			for (int j=0;j<tensor.dimension(1);j++)
+		case 2:
+/*
+			for (int i = 0; i < tensor.dimension(0); i++)
 			{
-				for (int k=0;k<tensor.dimension(2);k++)
+				for (int j = 0; j < tensor.dimension(1); j++)
 				{
-					for (int h=0;h<tensor.dimension(3);h++)
+					std::cout << "tensor element:" << tensor(i, j) << std::endl;
+				}
+
+			}*/
+			break;
+
+		case 4:
+
+			for (int i = 0; i < tensor.dimension(0); i++)
+			{
+				for (int j = 0; j < tensor.dimension(1); j++)
+				{
+					for (int k = 0; k < tensor.dimension(2); k++)
 					{
-						std::cout << "tensor element:" << tensor(i,j,k,h) << std::endl;
+						for (int h = 0; h < tensor.dimension(3); h++)
+						{
+							std::cout << "tensor element:" << tensor(i, j, k, h) << std::endl;
+						}
 					}
 				}
 			}
+			break;
+
+		default:
+			break;
 		}
+
+
 
 
 	}
